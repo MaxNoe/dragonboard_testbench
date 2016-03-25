@@ -162,10 +162,12 @@ def read(path, max_events=None):
 
 
 class EventGenerator(object):
-    def __init__(self, file_descriptor, max_events=None):
+    def __init__(self, file_descriptor, max_events=None, buffer_size=1):
         self.file_descriptor = file_descriptor
+        self.buffer_size = buffer_size
         self.event_size = guess_event_size(file_descriptor)
         self.max_events = max_events
+        self.some_events = []
 
     def __iter__(self):
         return self
@@ -180,7 +182,7 @@ class EventGenerator(object):
             raise ValueError('Already at first event')
         return self.next()
 
-    def next(self):
+    def read_one_event(self):
         try:
             event_header = read_header(self.file_descriptor)
             event_size = guess_event_size(self.file_descriptor)
@@ -196,3 +198,19 @@ class EventGenerator(object):
 
         except struct.error:
             raise StopIteration
+
+
+    def __fill_buffer(self):
+        self.some_events = []
+        for i in range(self.buffer_size):
+            self.some_events.append( self.read_one_event() )
+
+    def next(self):
+        try:
+            return self.some_events.pop()
+        except IndexError:
+            try:
+                self.__fill_buffer()
+                return self.some_events.pop()
+            except IndexError:
+                raise StopIteration
