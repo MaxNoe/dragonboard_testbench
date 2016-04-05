@@ -39,7 +39,7 @@ def write(store, data):
         df['delta_t'] = df['delta_t'].astype('float32')
 
         store.append(
-            'pixel_{}/{}'.format(pixel, gain),
+            'pixel_{}_{}'.format(pixel, gain),
             df,
         )
 
